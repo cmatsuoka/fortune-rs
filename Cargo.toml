@@ -1,0 +1,8 @@
+[package]
+name = "fortune"
+version = "0.1.0"
+authors = ["Claudio Matsuoka <cmatsuoka@gmail.com>"]
+
+[dependencies]
+getopts = "0.2"
+byteorder = "1"
