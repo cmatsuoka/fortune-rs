@@ -19,8 +19,9 @@ impl Fortune {
         Ok(())
     }
 
-    pub fn get(&self) -> Result<String, io::Error> {
-        return self.jars[0].get(0);
+    pub fn get<F>(&self, f: F) -> Result<(), io::Error>
+        where F: FnOnce(String) {
+        return self.jars[0].get_one(0, f);
     }
 }
 
@@ -52,7 +53,8 @@ struct CookieJar {
 
 impl CookieJar {
 
-    fn get(&self, which: usize) -> Result<String, io::Error> {
+    fn get_one<F>(&self, which: usize, f: F) -> Result<(), io::Error>
+        where F: FnOnce(String) {
 
         let start = self.dat.seekpts[which] as u64;
         let end = self.dat.seekpts[which + 1] as u64;
@@ -64,9 +66,9 @@ impl CookieJar {
         let mut buf = vec![0_u8; size as usize];
         try!(file.read_exact(buf.as_mut_slice()));
 
-        let fort = String::from_utf8(buf).unwrap();
+        f(String::from_utf8(buf).unwrap());
 
-        Ok(fort)
+        Ok(())
     }
 }
 

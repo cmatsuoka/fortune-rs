@@ -6,7 +6,7 @@ use std::env;
 
 mod fortune;
 
-const FORTUNE_DIR: &'static str = "/usr/share/games/fortunes";
+const FORTUNE_DIR: &'static str = "/usr/share/games/fortune";
 
 fn main() {
 
@@ -33,18 +33,9 @@ fn main() {
         }
     };
 
-    /*let mut path = path::PathBuf::new();
-    path.push(FORTUNE_DIR);
-    path.push("fortunes.dat");*/
-
     let mut fortune = fortune::new();
     fortune.load(FORTUNE_DIR);
 
-    println!("{}", fortune.get().unwrap());
-
-    /*let mut dat : strfile::Strfile = Default::default();
-    dat.load(path);
-    
-    println!("{}", dat.version);*/
+    fortune.get(|x| print!("{}", x));
 }
 
