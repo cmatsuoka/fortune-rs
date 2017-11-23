@@ -2,13 +2,13 @@ extern crate byteorder;
 
 use self::byteorder::{BigEndian, ReadBytesExt};
 use std::fs::File;
-use std::io::{self, BufRead, BufReader, Read};
+use std::io::{self, BufReader, Read};
 use std::path;
 
-const STRFILE_VERSION      : u32 = 2;
-const STRFILE_FLAG_RANDOM  : u32 = 0x1;	// randomized pointers
-const STRFILE_FLAG__ORDERED: u32 = 0x2;	// ordered pointers
-const STRFILE_FLAG__ROTATED: u32 = 0x4;	// rot-13'd text
+const STRFILE_VERSION     : u32 = 2;
+const STRFILE_FLAG_RANDOM : u32 = 0x1;	// randomized pointers
+const STRFILE_FLAG_ORDERED: u32 = 0x2;	// ordered pointers
+const STRFILE_FLAG_ROTATED: u32 = 0x4;	// rot-13'd text
 
 // information table
 
@@ -37,7 +37,7 @@ impl Strfile {
         self.flags    = try!(f.read_u32::<BigEndian>());
         try!(f.read_exact(&mut self.stuff));
 
-        for n in 0..(self.numstr + 1) {
+        for _ in 0..(self.numstr + 1) {
             self.seekpts.push(try!(f.read_u32::<BigEndian>()));
 	}
 

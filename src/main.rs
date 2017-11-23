@@ -3,12 +3,8 @@ extern crate getopts;
 
 use getopts::Options;
 use std::env;
-use std::io;
-use std::fs;
-use std::path;
-use std::ffi::OsStr;
 
-mod strfile;
+mod fortune;
 
 const FORTUNE_DIR: &'static str = "/usr/share/games/fortunes";
 
@@ -37,32 +33,18 @@ fn main() {
         }
     };
 
-    let files = get_fortune_files(FORTUNE_DIR);
-    let files = files.unwrap();
-
-    println!("{:?}", files);
-
-    let mut path = path::PathBuf::new();
+    /*let mut path = path::PathBuf::new();
     path.push(FORTUNE_DIR);
-    path.push("fortunes.dat");
+    path.push("fortunes.dat");*/
 
-    let mut dat : strfile::Strfile = Default::default();
+    let mut fortune = fortune::new();
+    fortune.load(FORTUNE_DIR);
+
+    println!("{}", fortune.get().unwrap());
+
+    /*let mut dat : strfile::Strfile = Default::default();
     dat.load(path);
     
-    println!("{}", dat.version);
-}
-
-fn get_fortune_files(dir: &str) -> Result<Vec<path::PathBuf>, io::Error> {
-
-    let mut v: Vec<path::PathBuf> = Vec::new();
-
-    for entry in fs::read_dir(dir)? {
-        let path = entry?.path();
-        if path.extension().and_then(OsStr::to_str) == Some("dat") {
-            v.push(path)
-        }
-    }
-
-    Ok(v)
+    println!("{}", dat.version);*/
 }
 
