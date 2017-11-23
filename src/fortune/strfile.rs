@@ -39,7 +39,7 @@ impl Strfile {
 
         for _ in 0..(self.numstr + 1) {
             self.seekpts.push(try!(f.read_u32::<BigEndian>()));
-	}
+        }
 
         Ok(())
     }
