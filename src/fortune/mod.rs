@@ -6,14 +6,14 @@ use std::path;
 mod strfile;
 
 pub struct Fortune {
-    jars: Vec<Cookies>,
+    jars: Vec<CookieJar>,
 }
 
 impl Fortune {
 
     pub fn load(&mut self, dir: &str) -> Result<(), io::Error> {
         for f in fortune_files(dir)? {
-            self.jars.push(cookies(f)?);
+            self.jars.push(cookie_jar(f)?);
         }
 
         Ok(())
@@ -45,14 +45,14 @@ fn fortune_files(dir: &str) -> Result<Vec<path::PathBuf>, io::Error> {
 }
 
 
-pub struct Cookies {
+struct CookieJar {
     path: path::PathBuf,
     dat : strfile::Strfile,
 }
 
-impl Cookies {
+impl CookieJar {
 
-    pub fn get(&self, which: usize) -> Result<String, io::Error> {
+    fn get(&self, which: usize) -> Result<String, io::Error> {
 
         let start = self.dat.seekpts[which] as u64;
         let end = self.dat.seekpts[which + 1] as u64;
@@ -70,7 +70,7 @@ impl Cookies {
     }
 }
 
-pub fn cookies(mut path: path::PathBuf) -> Result<Cookies, io::Error> {
+fn cookie_jar(mut path: path::PathBuf) -> Result<CookieJar, io::Error> {
 
     let path_clone = path.clone();
     let stem = path_clone.file_stem().unwrap();
@@ -78,7 +78,7 @@ pub fn cookies(mut path: path::PathBuf) -> Result<Cookies, io::Error> {
     path.pop();
     path.push(stem);
 
-    let mut jar = Cookies{
+    let mut jar = CookieJar{
         path: path,
         dat : Default::default(),
     };
