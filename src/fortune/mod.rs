@@ -1,7 +1,10 @@
+extern crate regex;
+
 use std::ffi::OsStr;
 use std::fs::{self, File};
 use std::io::{self, Read, Seek, SeekFrom};
 use std::path;
+use self::regex::Regex;
 
 mod strfile;
 
@@ -67,6 +70,21 @@ impl CookieJar {
         try!(file.read_exact(buf.as_mut_slice()));
 
         f(String::from_utf8(buf).unwrap());
+
+        Ok(())
+    }
+
+    fn get_many<F>(&self, pat: &str) -> Result<(), io::Error>
+        where F: FnOnce(String) {
+
+        let re = Regex::new(pat).unwrap();
+        let mut file = try!(File::open(self.path.clone()));
+
+        for n in 0..self.dat.numstr {
+            let start = self.dat.seekpts[n as usize] as u64;
+            let end = self.dat.seekpts[n as usize + 1] as u64;
+            let size = end - start - 2;
+        }
 
         Ok(())
     }

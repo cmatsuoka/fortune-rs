@@ -6,3 +6,4 @@ authors = ["Claudio Matsuoka <cmatsuoka@gmail.com>"]
 [dependencies]
 getopts = "0.2"
 byteorder = "1"
+regex = "0.2"
