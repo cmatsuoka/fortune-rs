@@ -2,7 +2,7 @@ extern crate byteorder;
 
 use self::byteorder::{BigEndian, ReadBytesExt};
 use std::fs::File;
-use std::io::{self, BufRead, BufReader};
+use std::io::{self, BufRead, BufReader, Read};
 use std::path;
 
 const STRFILE_VERSION      : u32 = 2;
@@ -27,16 +27,19 @@ impl Strfile {
 
     pub fn load(&mut self, path: path::PathBuf) -> Result<(), io::Error> {
 
-        //let file = try!(File::open(filename).map_err(|e| e.to_string()));
         let file = try!(File::open(path));
-	let mut f = BufReader::new(&file);
+        let mut f = BufReader::new(&file);
 
-	self.version  = try!(f.read_u32::<BigEndian>());
-	self.numstr   = try!(f.read_u32::<BigEndian>());
-	self.longlen  = try!(f.read_u32::<BigEndian>());
-	self.shortlen = try!(f.read_u32::<BigEndian>());
-	self.flags    = try!(f.read_u32::<BigEndian>());
-	
+        self.version  = try!(f.read_u32::<BigEndian>());
+        self.numstr   = try!(f.read_u32::<BigEndian>());
+        self.longlen  = try!(f.read_u32::<BigEndian>());
+        self.shortlen = try!(f.read_u32::<BigEndian>());
+        self.flags    = try!(f.read_u32::<BigEndian>());
+        try!(f.read_exact(&mut self.stuff));
+
+        for n in 0..(self.numstr + 1) {
+            self.seekpts.push(try!(f.read_u32::<BigEndian>()));
+	}
 
         Ok(())
     }
