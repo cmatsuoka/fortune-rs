@@ -10,14 +10,14 @@ use self::regex::Regex;
 mod strfile;
 
 pub struct Fortune {
-    jars: Vec<CookieJar>,
+    jars: Vec<CookieFile>,
 }
 
 impl Fortune {
 
     pub fn load(&mut self, dir: &str) -> Result<(), Box<Error>> {
         for f in fortune_files(dir)? {
-            self.jars.push(cookie_jar(f)?);
+            self.jars.push(cookie_file(f)?);
         }
 
         Ok(())
@@ -57,12 +57,12 @@ fn fortune_files(dir: &str) -> Result<Vec<path::PathBuf>, io::Error> {
 }
 
 
-struct CookieJar {
+struct CookieFile {
     path: path::PathBuf,
     dat : strfile::Strfile,
 }
 
-impl CookieJar {
+impl CookieFile {
 
     fn get_one<F>(&self, which: usize, fun: F) -> Result<(), Box<Error>>
         where F: FnOnce(&String) {
@@ -114,7 +114,7 @@ impl CookieJar {
     }
 }
 
-fn cookie_jar(mut path: path::PathBuf) -> Result<CookieJar, Box<Error>> {
+fn cookie_file(mut path: path::PathBuf) -> Result<CookieFile, Box<Error>> {
 
     let data_path = path.clone();
     let stem = match data_path.file_stem() {
@@ -125,13 +125,13 @@ fn cookie_jar(mut path: path::PathBuf) -> Result<CookieJar, Box<Error>> {
     path.pop();
     path.push(stem);
 
-    let mut jar = CookieJar{
+    let mut cf = CookieFile{
         path,
         dat : Default::default(),
     };
 
-    try!(jar.dat.load(&data_path));
+    try!(cf.dat.load(&data_path));
 
-    Ok(jar)
+    Ok(cf)
 }
 
