@@ -36,6 +36,6 @@ fn main() {
     let mut fortune = fortune::new();
     fortune.load(FORTUNE_DIR);
 
-    fortune.get(|x| print!("{}", x));
+    fortune.search("success", |x| print!("{}", x));
 }
 
