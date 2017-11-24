@@ -12,7 +12,7 @@ const STRFILE_FLAG_ROTATED: u32 = 0x4;	// rot-13'd text
 
 // information table
 
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct Strfile {
     pub version : u32,      // version number
     pub numstr  : u32,      // # of strings in the file

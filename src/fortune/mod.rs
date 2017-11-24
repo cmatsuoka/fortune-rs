@@ -1,3 +1,4 @@
+extern crate rand;
 extern crate regex;
 
 use std::error::Error;
@@ -23,15 +24,40 @@ impl Fortune {
         Ok(())
     }
 
+    fn pick_jar(&self) -> &CookieFile {
+        use self::rand::distributions::{Weighted, WeightedChoice, IndependentSample};
+        let mut items : Vec<Weighted<&CookieFile>> = Default::default();
+
+        for cf in &self.jars {
+            let item = Weighted{
+                weight: cf.dat.numstr,
+                item  : cf,
+            };
+
+            items.push(item);
+        }
+
+        let wc = WeightedChoice::new(&mut items);
+        let mut rng = rand::thread_rng();
+
+        return wc.ind_sample(&mut rng);
+    }
+
     pub fn get<F>(&self, f: F) -> Result<(), Box<Error>>
         where F: FnOnce(&String) {
-        try!(self.jars[0].get_one(0, f));
+
+        try!(self.pick_jar().get_one(0, f));
         Ok(())
     }
 
     pub fn search<F1, F2>(&self, pat: &str, fname: F1, fun: F2) -> Result<(), Box<Error>>
-        where F1: FnOnce(&String), F2: Fn(&String) {
-        try!(self.jars[0].get_many(pat, fname, fun));
+        where F1: Fn(&String), F2: Fn(&String) {
+
+        let re = Regex::new(pat).unwrap();
+
+        for cf in &self.jars {
+            try!(cf.get_many(&re, &fname, &fun));
+        }
         Ok(())
     }
 }
@@ -57,6 +83,7 @@ fn fortune_files(dir: &str) -> Result<Vec<path::PathBuf>, io::Error> {
 }
 
 
+#[derive(Clone)]
 struct CookieFile {
     name: OsString,
     path: path::PathBuf,
@@ -84,12 +111,11 @@ impl CookieFile {
         Ok(())
     }
 
-    fn get_many<F1, F2>(&self, pat: &str, fname: F1, fun: F2) -> Result<(), Box<Error>>
-        where F1: FnOnce(&String), F2: Fn(&String) {
+    fn get_many<F1, F2>(&self, re: &Regex, fname: F1, fun: F2) -> Result<(), Box<Error>>
+        where F1: Fn(&String), F2: Fn(&String) {
 
         use std::ops::Deref;
 
-        let re = Regex::new(pat).unwrap();
         let mut file = try!(File::open(self.path.clone()));
         let mut f = io::BufReader::new(&file);
 

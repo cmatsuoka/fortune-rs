@@ -7,3 +7,4 @@ authors = ["Claudio Matsuoka <cmatsuoka@gmail.com>"]
 getopts = "0.2"
 byteorder = "1"
 regex = "0.2"
+rand = "0.3"
