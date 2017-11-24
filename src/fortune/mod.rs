@@ -25,7 +25,7 @@ impl Fortune {
         let files = fortune_files(dir)?;
 
         if files.len() <= 0 {
-            return Err(From::from("no cookie files found".to_string()));
+            return Err(From::from("No fortunes found".to_string()));
         }
 
         for f in files {
