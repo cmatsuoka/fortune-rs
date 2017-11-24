@@ -1,5 +1,6 @@
 extern crate regex;
 
+use std::error::Error;
 use std::ffi::OsStr;
 use std::fs::{self, File};
 use std::io::{self, Read, Seek, SeekFrom};
@@ -14,7 +15,7 @@ pub struct Fortune {
 
 impl Fortune {
 
-    pub fn load(&mut self, dir: &str) -> Result<(), io::Error> {
+    pub fn load(&mut self, dir: &str) -> Result<(), Box<Error>> {
         for f in fortune_files(dir)? {
             self.jars.push(cookie_jar(f)?);
         }
@@ -22,9 +23,10 @@ impl Fortune {
         Ok(())
     }
 
-    pub fn get<F>(&self, f: F) -> Result<(), io::Error>
+    pub fn get<F>(&self, f: F) -> Result<(), Box<Error>>
         where F: FnOnce(String) {
-        return self.jars[0].get_one(0, f);
+        try!(self.jars[0].get_one(0, f));
+        Ok(())
     }
 }
 
@@ -56,7 +58,7 @@ struct CookieJar {
 
 impl CookieJar {
 
-    fn get_one<F>(&self, which: usize, f: F) -> Result<(), io::Error>
+    fn get_one<F>(&self, which: usize, f: F) -> Result<(), Box<Error>>
         where F: FnOnce(String) {
 
         let start = self.dat.seekpts[which] as u64;
@@ -74,7 +76,7 @@ impl CookieJar {
         Ok(())
     }
 
-    fn get_many<F>(&self, pat: &str) -> Result<(), io::Error>
+    fn get_many<F>(&self, pat: &str) -> Result<(), Box<Error>>
         where F: FnOnce(String) {
 
         let re = Regex::new(pat).unwrap();
@@ -90,10 +92,13 @@ impl CookieJar {
     }
 }
 
-fn cookie_jar(mut path: path::PathBuf) -> Result<CookieJar, io::Error> {
+fn cookie_jar(mut path: path::PathBuf) -> Result<CookieJar, Box<Error>> {
 
     let data_path = path.clone();
-    let stem = data_path.file_stem().unwrap();
+    let stem = match data_path.file_stem() {
+        Some(val) => val,
+        None => return Err(From::from("invalid data file".to_string())),
+    };
 
     path.pop();
     path.push(stem);
