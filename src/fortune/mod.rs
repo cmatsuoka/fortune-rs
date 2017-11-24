@@ -92,19 +92,18 @@ impl CookieJar {
 
 fn cookie_jar(mut path: path::PathBuf) -> Result<CookieJar, io::Error> {
 
-    let path_clone = path.clone();
-    let stem = path_clone.file_stem().unwrap();
+    let data_path = path.clone();
+    let stem = data_path.file_stem().unwrap();
 
     path.pop();
     path.push(stem);
 
     let mut jar = CookieJar{
-        path: path,
+        path,
         dat : Default::default(),
     };
 
-    let jar_path = path_clone.clone();
-    try!(jar.dat.load(jar_path));
+    try!(jar.dat.load(&data_path));
 
     Ok(jar)
 }

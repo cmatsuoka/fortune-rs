@@ -25,7 +25,7 @@ pub struct Strfile {
 
 impl Strfile {
 
-    pub fn load(&mut self, path: path::PathBuf) -> Result<(), io::Error> {
+    pub fn load(&mut self, path: &path::PathBuf) -> Result<(), io::Error> {
 
         let file = try!(File::open(path));
         let mut f = BufReader::new(&file);

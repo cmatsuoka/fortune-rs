@@ -6,7 +6,7 @@ use std::env;
 
 mod fortune;
 
-const FORTUNE_DIR: &'static str = "/usr/share/games/fortune";
+const FORTUNE_DIR: &'static str = "/usr/share/games/fortunes";
 
 fn main() {
 
