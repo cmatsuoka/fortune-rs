@@ -66,7 +66,7 @@ impl Fortune {
         let re = Regex::new(pat).unwrap();
 
         for cf in &self.jars {
-            try!(cf.get_many(&re, &fname, &fun));
+            try!(cf.get_many(&re, self.slen, self.long_only, self.short_only, &fname, &fun));
         }
         Ok(())
     }
@@ -136,8 +136,8 @@ impl CookieFile {
         Ok(())
     }
 
-    fn get_many<F1, F2>(&self, re: &Regex, fname: F1, fun: F2) -> Result<(), Box<Error>>
-        where F1: Fn(&String), F2: Fn(&String) {
+    fn get_many<F1, F2>(&self, re: &Regex, slen: u32, long_only: bool, short_only: bool,
+        fname: F1, fun: F2) -> Result<(), Box<Error>> where F1: Fn(&String), F2: Fn(&String) {
 
         use std::ops::Deref;
 
@@ -149,8 +149,8 @@ impl CookieFile {
         fname(&self.name.to_str().unwrap().to_string());
 
         for n in 0..self.dat.numstr {
-            let start = self.dat.seekpts[n as usize] as u64;
-            let end = self.dat.seekpts[n as usize + 1] as u64;
+            let start = self.dat.seekpts[n as usize];
+            let end = self.dat.seekpts[n as usize + 1];
             let size = end - start - 2;
 
             s.truncate(0);
@@ -159,8 +159,10 @@ impl CookieFile {
                 try!(f.read_line(&mut s));
             }
 
-            if re.is_match(s.deref()) {
-                fun(&s);
+            if (!long_only && size <= slen) || (!short_only && size > slen) {
+                if re.is_match(s.deref()) {
+                    fun(&s);
+                }
             }
         }
 
