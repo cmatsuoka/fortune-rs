@@ -12,6 +12,9 @@ use self::regex::Regex;
 mod strfile;
 
 pub struct Fortune {
+    pub slen: u32,
+    pub long_only: bool,
+    pub short_only: bool,
     jars: Vec<CookieFile>,
 }
 
@@ -52,15 +55,8 @@ impl Fortune {
     }
 
     // Get a random string from a random cookie file
-    pub fn get<F>(&self, f: F) -> Result<(), Box<Error>>
-        where F: FnOnce(&String) {
-
-        let cf = self.pick_jar();
-        let range = Range::new(0, cf.dat.numstr);
-        let mut rng = rand::thread_rng();
-
-        try!(cf.get_one(range.ind_sample(&mut rng) as usize, f));
-        Ok(())
+    pub fn get<F>(&self, f: F) -> Result<(), Box<Error>> where F: FnOnce(&String) {
+        return self.pick_jar().get_one(self.slen, self.long_only, self.short_only, f);
     }
 
     // Get all strings that match a given regexp pattern
@@ -78,6 +74,9 @@ impl Fortune {
 
 pub fn new() -> Fortune {
     return Fortune{
+        slen: 160,
+        long_only: false,
+        short_only: false,
         jars: Vec::new(),
     }
 }
@@ -106,15 +105,27 @@ struct CookieFile {
 
 impl CookieFile {
 
-    fn get_one<F>(&self, which: usize, fun: F) -> Result<(), Box<Error>>
-        where F: FnOnce(&String) {
+    fn get_one<F>(&self, slen: u32, long_only: bool, short_only: bool, fun: F) ->
+        Result<(), Box<Error>> where F: FnOnce(&String) {
 
-        let start = self.dat.seekpts[which] as u64;
-        let end = self.dat.seekpts[which + 1] as u64;
-        let size = end - start - 2;
+        let range = Range::new(0, self.dat.numstr);
+        let mut rng = rand::thread_rng();
+        let mut which = 0 as usize;
+        let (mut start, mut end, mut size) = (0_u32, 0_u32, 0_u32);
+   
+        loop {
+            which = range.ind_sample(&mut rng) as usize;
+            start = self.dat.seekpts[which];
+            end = self.dat.seekpts[which + 1];
+            size = end - start - 2;
+
+            if (!long_only && size <= slen) || (!short_only && size > slen) {
+                break;
+            }
+        }
 
         let mut file = try!(File::open(self.path.clone()));
-        try!(file.seek(SeekFrom::Start(start)));
+        try!(file.seek(SeekFrom::Start(start as u64)));
 
         let mut buf = vec![0_u8; size as usize];
         try!(file.read_exact(buf.as_mut_slice()));
