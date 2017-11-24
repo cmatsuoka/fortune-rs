@@ -19,7 +19,13 @@ impl Fortune {
 
     // Load cookie files metadata
     pub fn load(&mut self, dir: &str) -> Result<(), Box<Error>> {
-        for f in fortune_files(dir)? {
+        let files = fortune_files(dir)?;
+
+        if files.len() <= 0 {
+            return Err(From::from("no cookie files found".to_string()));
+        }
+
+        for f in files {
             self.jars.push(cookie_file(f)?);
         }
 
