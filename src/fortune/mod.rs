@@ -6,6 +6,7 @@ use std::ffi::{OsStr, OsString};
 use std::fs::{self, File};
 use std::io::{self, BufRead, Read, Seek, SeekFrom};
 use std::path;
+use self::rand::distributions::{self, Range, IndependentSample};
 use self::regex::Regex;
 
 mod strfile;
@@ -16,6 +17,7 @@ pub struct Fortune {
 
 impl Fortune {
 
+    // Load cookie files metadata
     pub fn load(&mut self, dir: &str) -> Result<(), Box<Error>> {
         for f in fortune_files(dir)? {
             self.jars.push(cookie_file(f)?);
@@ -24,12 +26,12 @@ impl Fortune {
         Ok(())
     }
 
+    // Choose a random cookie file weighted by its number of strings
     fn pick_jar(&self) -> &CookieFile {
-        use self::rand::distributions::{Weighted, WeightedChoice, IndependentSample};
-        let mut items : Vec<Weighted<&CookieFile>> = Default::default();
+        let mut items : Vec<distributions::Weighted<&CookieFile>> = Default::default();
 
         for cf in &self.jars {
-            let item = Weighted{
+            let item = distributions::Weighted{
                 weight: cf.dat.numstr,
                 item  : cf,
             };
@@ -37,19 +39,25 @@ impl Fortune {
             items.push(item);
         }
 
-        let wc = WeightedChoice::new(&mut items);
+        let wc = distributions::WeightedChoice::new(&mut items);
         let mut rng = rand::thread_rng();
 
         return wc.ind_sample(&mut rng);
     }
 
+    // Get a random string from a random cookie file
     pub fn get<F>(&self, f: F) -> Result<(), Box<Error>>
         where F: FnOnce(&String) {
 
-        try!(self.pick_jar().get_one(0, f));
+        let cf = self.pick_jar();
+        let range = Range::new(0, cf.dat.numstr);
+        let mut rng = rand::thread_rng();
+
+        try!(cf.get_one(range.ind_sample(&mut rng) as usize, f));
         Ok(())
     }
 
+    // Get all strings that match a given regexp pattern
     pub fn search<F1, F2>(&self, pat: &str, fname: F1, fun: F2) -> Result<(), Box<Error>>
         where F1: Fn(&String), F2: Fn(&String) {
 
