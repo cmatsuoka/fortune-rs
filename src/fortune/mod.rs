@@ -110,8 +110,8 @@ impl CookieFile {
 
         let range = Range::new(0, self.dat.numstr);
         let mut rng = rand::thread_rng();
-        let mut which = 0 as usize;
-        let (mut start, mut end, mut size) = (0_u32, 0_u32, 0_u32);
+        let mut which: usize;
+        let (mut start, mut end, mut size);
    
         loop {
             which = range.ind_sample(&mut rng) as usize;
@@ -141,7 +141,7 @@ impl CookieFile {
 
         use std::ops::Deref;
 
-        let mut file = try!(File::open(self.path.clone()));
+        let file = try!(File::open(self.path.clone()));
         let mut f = io::BufReader::new(&file);
 
         let mut s = String::with_capacity(self.dat.longlen as usize);
@@ -156,7 +156,7 @@ impl CookieFile {
             s.truncate(0);
 
             while s.len() < size as usize {
-                f.read_line(&mut s);
+                try!(f.read_line(&mut s));
             }
 
             if re.is_match(s.deref()) {
