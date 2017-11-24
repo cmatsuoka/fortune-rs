@@ -1,7 +1,7 @@
 extern crate regex;
 
 use std::error::Error;
-use std::ffi::OsStr;
+use std::ffi::{OsStr, OsString};
 use std::fs::{self, File};
 use std::io::{self, BufRead, Read, Seek, SeekFrom};
 use std::path;
@@ -29,9 +29,9 @@ impl Fortune {
         Ok(())
     }
 
-    pub fn search<F>(&self, pat: &str, f: F) -> Result<(), Box<Error>>
-        where F: FnOnce(&String) {
-        try!(self.jars[0].get_many(pat, f));
+    pub fn search<F1, F2>(&self, pat: &str, fname: F1, fun: F2) -> Result<(), Box<Error>>
+        where F1: FnOnce(&String), F2: Fn(&String) {
+        try!(self.jars[0].get_many(pat, fname, fun));
         Ok(())
     }
 }
@@ -58,6 +58,7 @@ fn fortune_files(dir: &str) -> Result<Vec<path::PathBuf>, io::Error> {
 
 
 struct CookieFile {
+    name: OsString,
     path: path::PathBuf,
     dat : strfile::Strfile,
 }
@@ -83,8 +84,8 @@ impl CookieFile {
         Ok(())
     }
 
-    fn get_many<F>(&self, pat: &str, fun: F) -> Result<(), Box<Error>>
-        where F: FnOnce(&String) {
+    fn get_many<F1, F2>(&self, pat: &str, fname: F1, fun: F2) -> Result<(), Box<Error>>
+        where F1: FnOnce(&String), F2: Fn(&String) {
 
         use std::ops::Deref;
 
@@ -93,6 +94,8 @@ impl CookieFile {
         let mut f = io::BufReader::new(&file);
 
         let mut s = String::with_capacity(self.dat.longlen as usize);
+
+        fname(&self.name.to_str().unwrap().to_string());
 
         for n in 0..self.dat.numstr {
             let start = self.dat.seekpts[n as usize] as u64;
@@ -106,7 +109,7 @@ impl CookieFile {
             }
 
             if re.is_match(s.deref()) {
-                println!("{}", &s);
+                fun(&s);
             }
         }
 
@@ -126,6 +129,7 @@ fn cookie_file(mut path: path::PathBuf) -> Result<CookieFile, Box<Error>> {
     path.push(stem);
 
     let mut cf = CookieFile{
+        name: stem.to_os_string(),
         path,
         dat : Default::default(),
     };
