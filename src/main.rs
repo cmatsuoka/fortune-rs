@@ -3,7 +3,8 @@ extern crate getopts;
 
 use std::env;
 use std::error::Error;
-use getopts::Options;
+use std::ops::Deref;
+use getopts::{Matches, Options};
 
 mod fortune;
 
@@ -34,7 +35,7 @@ fn main() {
         }
     };
 
-    match run(FORTUNE_DIR) {
+    match run(FORTUNE_DIR, matches) {
         Ok(_) => return,
         Err(e) => {
             println!("Error: {}", e);
@@ -43,12 +44,19 @@ fn main() {
     }
 }
 
-fn run(dir: &str) -> Result<(), Box<Error>> {
+fn run(dir: &str, matches: Matches) -> Result<(), Box<Error>> {
     let mut fortune = fortune::new();
     try!(fortune.load(dir));
 
-    //fortune.search("success", |x| println!("({})", x), |x| print!("{}", x));
-    try!(fortune.get(|x| print!("{}", x)));
+    match matches.opt_str("m") {
+        Some(pat) => {
+            let pat = pat.deref();
+            try!(fortune.search(pat, |x| println!("({})", x), |x| print!("{}", x)))
+        },
+        None => {
+            try!(fortune.get(|x| print!("{}", x)))
+        },
+    }
 
     Ok(())
 }
