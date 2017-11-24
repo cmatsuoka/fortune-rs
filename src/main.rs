@@ -50,8 +50,12 @@ fn run(dir: &str, matches: Matches) -> Result<(), Box<Error>> {
 
     match matches.opt_str("m") {
         Some(pat) => {
-            let pat = pat.deref();
-            try!(fortune.search(pat, |x| println!("({})", x), |x| print!("{}", x)))
+            let mut p = pat;
+            if matches.opt_present("i") {
+                p = format!("(?i:{})", p);
+            }
+            let p = p.deref();
+            try!(fortune.search(p, |x| println!("({})", x), |x| print!("{}", x)))
         },
         None => {
             try!(fortune.get(|x| print!("{}", x)))
