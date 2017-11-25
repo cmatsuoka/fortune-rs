@@ -110,14 +110,12 @@ impl CookieFile {
 
         let range = Range::new(0, self.dat.numstr);
         let mut rng = rand::thread_rng();
-        let mut which: usize;
-        let (mut start, mut end, mut size);
+        let (mut which, mut start, mut size);
    
         loop {
             which = range.ind_sample(&mut rng) as usize;
-            start = self.dat.seekpts[which];
-            end = self.dat.seekpts[which + 1];
-            size = end - start - 2;
+            start = self.dat.start_of(which);
+            size = self.dat.end_of(which) - start - 2;
 
             if (!long_only && size <= slen) || (!short_only && size > slen) {
                 break;
@@ -148,12 +146,11 @@ impl CookieFile {
 
         fname(&self.name.to_str().unwrap().to_string());
 
-        for n in 0..self.dat.numstr {
-            let start = self.dat.seekpts[n as usize];
-            let end = self.dat.seekpts[n as usize + 1];
-            let size = end - start - 2;
+        for n in 0..self.dat.numstr as usize {
+            let start = self.dat.start_of(n);
+            let size = self.dat.end_of(n) - start - 2;
 
-            s.truncate(0);
+            s.clear();
 
             while s.len() < size as usize {
                 try!(f.read_line(&mut s));

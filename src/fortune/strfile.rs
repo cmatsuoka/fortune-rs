@@ -18,9 +18,9 @@ pub struct Strfile {
     pub numstr  : u32,      // # of strings in the file
     pub longlen : u32,      // length of longest string
     pub shortlen: u32,      // length of shortest string
-    pub flags   : u32,      // bit field for flags
-    pub stuff   : [u8; 4],  // long aligned space
-    pub seekpts : Vec<u32>  // seek pointers
+    flags       : u32,      // bit field for flags
+    stuff       : [u8; 4],  // long aligned space
+    seekpts     : Vec<u32>  // seek pointers
 }
 
 impl Strfile {
@@ -42,6 +42,16 @@ impl Strfile {
         }
 
         Ok(())
+    }
+
+    #[inline]
+    pub fn start_of(&self, which: usize) -> u32 {
+        self.seekpts[which]
+    }
+
+    #[inline]
+    pub fn end_of(&self, which: usize) -> u32 {
+        self.seekpts[which + 1]
     }
 }
 
