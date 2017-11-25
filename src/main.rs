@@ -47,6 +47,8 @@ fn main() {
 fn run(dir: &str, matches: Matches) -> Result<(), Box<Error>> {
     let mut fortune = fortune::new();
 
+    try!(fortune.load(dir));
+
     // Handle option to set the short fortune threshold
     match matches.opt_str("n") {
         Some(val) => {
@@ -64,7 +66,9 @@ fn run(dir: &str, matches: Matches) -> Result<(), Box<Error>> {
         fortune = fortune.short_only();
     }
 
-    try!(fortune.load(dir));
+    if matches.opt_present("e") {
+        fortune = fortune.equal_size();
+    }
 
     match matches.opt_str("m") {
         Some(pat) => {

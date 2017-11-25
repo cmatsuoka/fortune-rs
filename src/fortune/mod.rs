@@ -71,23 +71,30 @@ impl Fortune {
         self
     }
 
+    pub fn equal_size(mut self) -> Self{
+        // set all weights to 1 if considering equal size
+        for cf in &mut self.jars {
+            cf.weight = 1;
+        }
+        self
+    }
+
     // Choose a random cookie file weighted by its number of strings
     fn pick_jar(&self) -> &CookieFile {
+
+        let mut rng = rand::thread_rng();
         let mut items : Vec<distributions::Weighted<&CookieFile>> = Default::default();
 
         for cf in &self.jars {
-            let item = distributions::Weighted{
-                weight: cf.dat.numstr,
+            items.push(distributions::Weighted{
+                weight: cf.weight,
                 item  : cf,
-            };
-
-            items.push(item);
+            });
         }
 
-        let wc = distributions::WeightedChoice::new(&mut items);
-        let mut rng = rand::thread_rng();
+        let range = distributions::WeightedChoice::new(&mut items);
 
-        return wc.ind_sample(&mut rng);
+        return range.ind_sample(&mut rng);
     }
 
     // Get a random string from a random cookie file
@@ -137,6 +144,7 @@ fn fortune_files(dir: &str) -> Result<Vec<path::PathBuf>, io::Error> {
 struct CookieFile {
     name: OsString,
     path: path::PathBuf,
+    weight: u32,
     dat : strfile::Strfile,
 }
 
@@ -217,11 +225,14 @@ fn cookie_file(mut path: path::PathBuf) -> Result<CookieFile, Box<Error>> {
 
     let mut cf = CookieFile{
         name: stem.to_os_string(),
+        weight: 1,
         path,
         dat : Default::default(),
     };
 
     try!(cf.dat.load(&data_path));
+
+    cf.weight = cf.dat.numstr;
 
     Ok(cf)
 }
