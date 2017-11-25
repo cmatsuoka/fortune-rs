@@ -1,9 +1,10 @@
 extern crate byteorder;
 
-use self::byteorder::{BigEndian, ReadBytesExt};
+use std::error::Error;
 use std::fs::File;
-use std::io::{self, BufReader, Read};
+use std::io::{BufReader, Read};
 use std::path;
+use self::byteorder::{BigEndian, ReadBytesExt};
 
 const STRFILE_VERSION     : u32 = 2;
 const STRFILE_FLAG_RANDOM : u32 = 0x1;	// randomized pointers
@@ -25,12 +26,17 @@ pub struct Strfile {
 
 impl Strfile {
 
-    pub fn load(&mut self, path: &path::PathBuf) -> Result<(), io::Error> {
+    pub fn load(&mut self, path: &path::PathBuf) -> Result<(), Box<Error>> {
 
         let file = try!(File::open(path));
         let mut f = BufReader::new(&file);
 
         self.version  = try!(f.read_u32::<BigEndian>());
+
+        if self.version > STRFILE_VERSION {
+            return Err(From::from("invalid data file version".to_string()));
+        }
+
         self.numstr   = try!(f.read_u32::<BigEndian>());
         self.longlen  = try!(f.read_u32::<BigEndian>());
         self.shortlen = try!(f.read_u32::<BigEndian>());
@@ -39,6 +45,11 @@ impl Strfile {
 
         for _ in 0..(self.numstr + 1) {
             self.seekpts.push(try!(f.read_u32::<BigEndian>()));
+        }
+
+        // if sorted or random, sort seek pointers
+        if self.flags & (STRFILE_FLAG_RANDOM | STRFILE_FLAG_ORDERED) != 0 {
+            self.seekpts.sort();
         }
 
         Ok(())
