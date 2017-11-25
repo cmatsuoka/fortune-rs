@@ -64,5 +64,10 @@ impl Strfile {
     pub fn end_of(&self, which: usize) -> u32 {
         self.seekpts[which + 1]
     }
+
+    #[inline]
+    pub fn is_rotated(&self) -> bool {
+        self.flags & STRFILE_FLAG_ROTATED != 0
+    }
 }
 

@@ -1,5 +1,6 @@
 extern crate rand;
 extern crate regex;
+extern crate rot13;
 
 use std::error::Error;
 use std::ffi::{OsStr, OsString};
@@ -25,7 +26,6 @@ trait ReadLines {
 }
 
 impl<R: io::Read> ReadLines for io::BufReader<R> {
-
     fn read_lines(&mut self, mut s: String, size: usize) -> Result<String, Box<Error>> {
         s.clear();
         while s.len() < size {
@@ -165,6 +165,10 @@ impl CookieFile {
 
         let mut s = String::with_capacity(size as usize);
         s = try!(f.read_lines(s, size as usize));
+
+        if self.dat.is_rotated() {
+            s = rot13::rot13(&s[..]);
+        }
 
         fun(&s);
 
