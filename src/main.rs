@@ -58,7 +58,9 @@ fn run(dir: &str, matches: Matches) -> Result<(), Box<Error>> {
     // Handle long- and short-only switch
     if matches.opt_present("l") {
         fortune = fortune.long_only();
-    } else if matches.opt_present("s") {
+    }
+
+    if matches.opt_present("s") {
         fortune = fortune.short_only();
     }
 
