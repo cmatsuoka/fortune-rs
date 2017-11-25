@@ -18,6 +18,25 @@ pub struct Fortune {
     jars: Vec<CookieFile>,
 }
 
+// Trait to read lines from a file
+
+trait ReadLines {
+    fn read_lines(&mut self, s: String, size: usize) -> Result<String, Box<Error>>;
+}
+
+impl<R: io::Read> ReadLines for io::BufReader<R> {
+
+    fn read_lines(&mut self, mut s: String, size: usize) -> Result<String, Box<Error>> {
+        s.clear();
+        while s.len() < size {
+            try!(self.read_line(&mut s));
+        }
+        Ok(s)
+    }
+}
+
+// Fortune reader
+
 impl Fortune {
 
     // Load cookie files metadata
@@ -112,6 +131,7 @@ fn fortune_files(dir: &str) -> Result<Vec<path::PathBuf>, io::Error> {
     Ok(v)
 }
 
+// Cookie file
 
 #[derive(Clone)]
 struct CookieFile {
@@ -144,7 +164,7 @@ impl CookieFile {
         try!(f.seek(SeekFrom::Start(start as u64)));
 
         let mut s = String::with_capacity(size as usize);
-        s = try!(read_item(&mut f, s, size as usize));
+        s = try!(f.read_lines(s, size as usize));
 
         fun(&s);
 
@@ -167,7 +187,7 @@ impl CookieFile {
             let start = self.dat.start_of(n);
             let size = self.dat.end_of(n) - start - 2;
 
-            s = try!(read_item(&mut f, s, size as usize));
+            s = try!(f.read_lines(s, size as usize));
 
             if (!long_only && size <= slen) || (!short_only && size > slen) {
                 if re.is_match(s.deref()) {
@@ -200,13 +220,5 @@ fn cookie_file(mut path: path::PathBuf) -> Result<CookieFile, Box<Error>> {
     try!(cf.dat.load(&data_path));
 
     Ok(cf)
-}
-
-fn read_item<R: BufRead>(f: &mut R, mut s: String, size: usize) -> Result<String, Box<Error>> {
-    s.clear();
-    while s.len() < size {
-        try!(f.read_line(&mut s));
-    }
-    Ok(s)
 }
 
