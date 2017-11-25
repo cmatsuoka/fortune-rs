@@ -4,7 +4,7 @@ extern crate regex;
 use std::error::Error;
 use std::ffi::{OsStr, OsString};
 use std::fs::{self, File};
-use std::io::{self, BufRead, Read, Seek, SeekFrom};
+use std::io::{self, BufRead, Seek, SeekFrom};
 use std::path;
 use self::rand::distributions::{self, Range, IndependentSample};
 use self::regex::Regex;
@@ -51,8 +51,6 @@ impl Fortune {
         self.slen = n;
         self
     }
-
-
 
     // Choose a random cookie file weighted by its number of strings
     fn pick_jar(&self) -> &CookieFile {
@@ -141,13 +139,13 @@ impl CookieFile {
             }
         }
 
-        let mut file = try!(File::open(self.path.clone()));
-        try!(file.seek(SeekFrom::Start(start as u64)));
+        let file = try!(File::open(self.path.clone()));
+        let mut f = io::BufReader::new(&file);
+        try!(f.seek(SeekFrom::Start(start as u64)));
 
-        let mut buf = vec![0_u8; size as usize];
-        try!(file.read_exact(buf.as_mut_slice()));
+        let mut s = String::with_capacity(size as usize);
+        s = try!(read_item(&mut f, s, size as usize));
 
-        let s = String::from_utf8(buf).unwrap();
         fun(&s);
 
         Ok(())
@@ -169,11 +167,7 @@ impl CookieFile {
             let start = self.dat.start_of(n);
             let size = self.dat.end_of(n) - start - 2;
 
-            s.clear();
-
-            while s.len() < size as usize {
-                try!(f.read_line(&mut s));
-            }
+            s = try!(read_item(&mut f, s, size as usize));
 
             if (!long_only && size <= slen) || (!short_only && size > slen) {
                 if re.is_match(s.deref()) {
@@ -206,5 +200,13 @@ fn cookie_file(mut path: path::PathBuf) -> Result<CookieFile, Box<Error>> {
     try!(cf.dat.load(&data_path));
 
     Ok(cf)
+}
+
+fn read_item<R: BufRead>(f: &mut R, mut s: String, size: usize) -> Result<String, Box<Error>> {
+    s.clear();
+    while s.len() < size {
+        try!(f.read_line(&mut s));
+    }
+    Ok(s)
 }
 
