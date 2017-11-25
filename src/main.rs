@@ -50,16 +50,16 @@ fn run(dir: &str, matches: Matches) -> Result<(), Box<Error>> {
     // Handle option to set the short fortune threshold
     match matches.opt_str("n") {
         Some(val) => {
-            fortune.slen = val.parse()?;
+            fortune = fortune.short_len(val.parse()?);
         },
         None => (),
     }
 
     // Handle long- and short-only switch
     if matches.opt_present("l") {
-        fortune.long_only = true;
+        fortune = fortune.long_only();
     } else if matches.opt_present("s") {
-        fortune.short_only = true;
+        fortune = fortune.short_only();
     }
 
     try!(fortune.load(dir));

@@ -12,9 +12,9 @@ use self::regex::Regex;
 mod strfile;
 
 pub struct Fortune {
-    pub slen: u32,
-    pub long_only: bool,
-    pub short_only: bool,
+    slen: u32,
+    long_only: bool,
+    short_only: bool,
     jars: Vec<CookieFile>,
 }
 
@@ -34,6 +34,25 @@ impl Fortune {
 
         Ok(())
     }
+
+    pub fn long_only(mut self) -> Self {
+        self.long_only = true;
+        self.short_only = false;
+        self
+    }
+
+    pub fn short_only(mut self) -> Self{
+        self.short_only = true;
+        self.long_only = false;
+        self
+    }
+
+    pub fn short_len(mut self, n: u32) -> Self{
+        self.slen = n;
+        self
+    }
+
+
 
     // Choose a random cookie file weighted by its number of strings
     fn pick_jar(&self) -> &CookieFile {
