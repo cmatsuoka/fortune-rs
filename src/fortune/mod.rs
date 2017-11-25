@@ -12,13 +12,6 @@ use self::regex::Regex;
 
 mod strfile;
 
-pub struct Fortune {
-    slen: u32,
-    long_only: bool,
-    short_only: bool,
-    jars: Vec<CookieFile>,
-}
-
 // Trait to read lines from a file
 
 trait ReadLines {
@@ -36,6 +29,13 @@ impl<R: io::Read> ReadLines for io::BufReader<R> {
 }
 
 // Fortune reader
+
+pub struct Fortune {
+    slen      : u32,       // short fortune length
+    long_only : bool,      // display only long fortunes
+    short_only: bool,      // display only short fortunes
+    jars: Vec<CookieFile>, // list of cookie files
+}
 
 impl Fortune {
 
@@ -142,10 +142,10 @@ fn fortune_files(dir: &str) -> Result<Vec<path::PathBuf>, io::Error> {
 
 #[derive(Clone)]
 struct CookieFile {
-    name: OsString,
-    path: path::PathBuf,
-    weight: u32,
-    dat : strfile::Strfile,
+    name  : OsString,         // cookie file name
+    path  : path::PathBuf,    // path to strfile metadata file
+    weight: u32,              // weight of this file for random pick
+    dat   : strfile::Strfile, // strfile metadata
 }
 
 impl CookieFile {
