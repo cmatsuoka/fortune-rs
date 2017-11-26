@@ -66,7 +66,7 @@ impl Fortune {
     pub fn equal_size(mut self) -> Self{
         // set all weights to 1 if considering equal size
         for cf in &mut self.jars {
-            cf.weight = 1;
+            cf.weight = 1.0;
         }
         self
     }
@@ -79,7 +79,7 @@ impl Fortune {
 
         for cf in &self.jars {
             items.push(distributions::Weighted{
-                weight: cf.weight,
+                weight: (cf.weight * 100.0) as u32,
                 item  : cf,
             });
         }
@@ -104,6 +104,26 @@ impl Fortune {
             try!(cf.get_many(&re, self.slen, self.long_only, self.short_only, &fname, &fun));
         }
         Ok(())
+    }
+
+    // Normalize weights to totalize 100%
+    pub fn normalize_weights(mut self) -> Self {
+        let mut w: f32 = 0.0;
+        for cf in &self.jars {
+            w += cf.weight;
+        }
+        w /= 100.0;
+        for cf in &mut self.jars {
+            cf.weight /= w;
+        }
+
+        self
+    }
+
+    pub fn print_weights(self) {
+        for cf in self.jars {
+            println!("   {:6.2}% {}", cf.weight, cf.name);
+        }
     }
 }
 

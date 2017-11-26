@@ -21,9 +21,9 @@ const STRFILE_FLAG_ROTATED: u32 = 0x4;	// rot-13'd text
 
 #[derive(Clone,Default)]
 pub struct Strfile {
-    name      : String,        // cookie file name
+    pub name  : String,        // cookie file name
+    pub weight: f32,           // weight of this file for random pick
     path      : path::PathBuf, // path to strfile metadata file
-    pub weight: u32,           // weight of this file for random pick
     dat       : Datfile,       // strfile metadata
 }
 
@@ -46,7 +46,7 @@ impl Strfile {
     
         self.name = name;
         self.path = path.clone();
-        self.weight = self.dat.numstr;
+        self.weight = self.dat.numstr as f32;
     
         Ok(self)
     }

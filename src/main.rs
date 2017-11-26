@@ -61,6 +61,17 @@ fn run(dir: &str, matches: Matches) -> Result<(), Box<Error>> {
 
     try!(fortune.load(dir));
 
+    if matches.opt_present("e") {
+        fortune = fortune.equal_size();
+    }
+
+    fortune = fortune.normalize_weights();
+
+    if matches.opt_present("f") {
+        fortune.print_weights();
+        return Ok(());
+    }
+
     // Handle option to set the short fortune threshold
     match matches.opt_str("n") {
         Some(val) => {
@@ -76,10 +87,6 @@ fn run(dir: &str, matches: Matches) -> Result<(), Box<Error>> {
 
     if matches.opt_present("s") {
         fortune = fortune.short_only();
-    }
-
-    if matches.opt_present("e") {
-        fortune = fortune.equal_size();
     }
 
     match matches.opt_str("m") {
