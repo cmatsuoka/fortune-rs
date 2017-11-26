@@ -1,40 +1,23 @@
 extern crate rand;
 extern crate regex;
-extern crate rot13;
 
 use std::error::Error;
-use std::ffi::{OsStr, OsString};
-use std::fs::{self, File};
-use std::io::{self, BufRead, Seek, SeekFrom};
+use std::ffi::OsStr;
+use std::fs;
+use std::io;
 use std::path;
-use self::rand::distributions::{self, Range, IndependentSample};
+use self::rand::distributions::{self, IndependentSample};
 use self::regex::Regex;
 
 mod strfile;
 
-// Trait to read lines from a file
-
-trait ReadLines {
-    fn read_lines(&mut self, s: String, size: usize) -> Result<String, Box<Error>>;
-}
-
-impl<R: io::Read> ReadLines for io::BufReader<R> {
-    fn read_lines(&mut self, mut s: String, size: usize) -> Result<String, Box<Error>> {
-        s.clear();
-        while s.len() < size {
-            try!(self.read_line(&mut s));
-        }
-        Ok(s)
-    }
-}
-
 // Fortune reader
 
 pub struct Fortune {
-    slen      : u32,       // short fortune length
-    long_only : bool,      // display only long fortunes
-    short_only: bool,      // display only short fortunes
-    jars: Vec<CookieFile>, // list of cookie files
+    slen      : u32,                   // short fortune length
+    long_only : bool,                  // display only long fortunes
+    short_only: bool,                  // display only short fortunes
+    jars      : Vec<strfile::Strfile>, // list of cookie files
 }
 
 impl Fortune {
@@ -56,7 +39,8 @@ impl Fortune {
         }
 
         for f in files {
-            self.jars.push(cookie_file(f)?);
+            let sf = strfile::new();
+            self.jars.push(sf.load(&f)?);
         }
 
         Ok(())
@@ -88,10 +72,10 @@ impl Fortune {
     }
 
     // Choose a random cookie file weighted by its number of strings
-    fn pick_jar(&self) -> &CookieFile {
+    fn pick_jar(&self) -> &strfile::Strfile {
 
         let mut rng = rand::thread_rng();
-        let mut items : Vec<distributions::Weighted<&CookieFile>> = Default::default();
+        let mut items : Vec<distributions::Weighted<&strfile::Strfile>> = Default::default();
 
         for cf in &self.jars {
             items.push(distributions::Weighted{
@@ -136,8 +120,15 @@ fn add_fortune_dir(mut v: Vec<path::PathBuf>, dir: &str) ->
     Result<Vec<path::PathBuf>, io::Error> {
 
     for entry in fs::read_dir(dir)? {
-        let path = entry?.path();
+        let mut path = entry?.path();
         if path.extension().and_then(OsStr::to_str) == Some("dat") {
+            // remove file extension
+            let p = path.clone();
+            let stem = p.file_stem().unwrap();
+
+            path.pop();
+            path.push(stem);
+
             v.push(path)
         }
     }
@@ -158,104 +149,5 @@ fn add_fortune_file(mut v: Vec<path::PathBuf>, name: &str) ->
     }
 
     Ok(v)
-}
-
-// Cookie file
-
-#[derive(Clone)]
-struct CookieFile {
-    name  : OsString,         // cookie file name
-    path  : path::PathBuf,    // path to strfile metadata file
-    weight: u32,              // weight of this file for random pick
-    dat   : strfile::Strfile, // strfile metadata
-}
-
-impl CookieFile {
-
-    fn get_one<F>(&self, slen: u32, long_only: bool, short_only: bool, fun: F) ->
-        Result<(), Box<Error>> where F: FnOnce(&String) {
-
-        let range = Range::new(0, self.dat.numstr);
-        let mut rng = rand::thread_rng();
-        let (mut which, mut start, mut size);
-   
-        loop {
-            which = range.ind_sample(&mut rng) as usize;
-            start = self.dat.start_of(which);
-            size = self.dat.end_of(which) - start - 2;
-
-            if (!long_only && size <= slen) || (!short_only && size > slen) {
-                break;
-            }
-        }
-
-        let file = try!(File::open(self.path.clone()));
-        let mut f = io::BufReader::new(&file);
-        try!(f.seek(SeekFrom::Start(start as u64)));
-
-        let mut s = String::with_capacity(size as usize);
-        s = try!(f.read_lines(s, size as usize));
-
-        if self.dat.is_rotated() {
-            s = rot13::rot13(&s[..]);
-        }
-
-        fun(&s);
-
-        Ok(())
-    }
-
-    fn get_many<F1, F2>(&self, re: &Regex, slen: u32, long_only: bool, short_only: bool,
-        fname: F1, fun: F2) -> Result<(), Box<Error>> where F1: Fn(&String), F2: Fn(&String) {
-
-        use std::ops::Deref;
-
-        let file = try!(File::open(self.path.clone()));
-        let mut f = io::BufReader::new(&file);
-
-        let mut s = String::with_capacity(self.dat.longlen as usize);
-
-        fname(&self.name.to_str().unwrap().to_string());
-
-        for n in 0..self.dat.numstr as usize {
-            let start = self.dat.start_of(n);
-            let size = self.dat.end_of(n) - start - 2;
-
-            s = try!(f.read_lines(s, size as usize));
-
-            if (!long_only && size <= slen) || (!short_only && size > slen) {
-                if re.is_match(s.deref()) {
-                    fun(&s);
-                }
-            }
-        }
-
-        Ok(())
-    }
-}
-
-fn cookie_file(mut path: path::PathBuf) -> Result<CookieFile, Box<Error>> {
-
-    let data_path = path.clone();
-    let stem = match data_path.file_stem() {
-        Some(val) => val,
-        None => return Err(From::from("invalid data file".to_string())),
-    };
-
-    path.pop();
-    path.push(stem);
-
-    let mut cf = CookieFile{
-        name: stem.to_os_string(),
-        weight: 1,
-        path,
-        dat : Default::default(),
-    };
-
-    try!(cf.dat.load(&data_path));
-
-    cf.weight = cf.dat.numstr;
-
-    Ok(cf)
 }
 
