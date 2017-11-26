@@ -1,14 +1,19 @@
 
 extern crate getopts;
 
+use std::cmp::max;
 use std::env;
 use std::error::Error;
 use std::ops::Deref;
+use std::thread::sleep;
+use std::time::Duration;
 use getopts::{Matches, Options};
 
 mod fortune;
 
-const FORTUNE_DIR: &'static str = "/usr/share/games/fortune";
+const MIN_WAIT     : usize = 6;
+const CHARS_PER_SEC: usize = 20;
+const FORTUNE_DIR  : &'static str = "/usr/share/games/fortune";
 
 fn main() {
 
@@ -87,7 +92,11 @@ fn run(dir: &str, matches: Matches) -> Result<(), Box<Error>> {
             try!(fortune.search(p, |x| println!("({})", x), |x| print!("{}", x)))
         },
         None => {
-            try!(fortune.get(|x| print!("{}", x)))
+            let mut fort_size: usize = 0;
+            try!(fortune.get(|x| { print!("{}", x); fort_size = x.len() }));
+            if matches.opt_present("w") {
+                sleep(Duration::from_secs(max(fort_size / CHARS_PER_SEC, MIN_WAIT) as u64));
+            }
         },
     }
 
