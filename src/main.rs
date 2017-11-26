@@ -19,13 +19,14 @@ fn main() {
     opts.optflag("c", "", "show the cookie file from which the fortune came");
     opts.optflag("e", "", "consider all fortune files to be of equal size");
     opts.optflag("f", "", "print out the list of files to be searched");
+    opts.optflag("h", "help", "display usage information and exit");
     opts.optflag("l", "", "long dictums only");
     opts.optopt("m", "", "print all fortunes matching the regex", "pattern");
     opts.optopt("n", "", "set the longest length considered short", "len");
     opts.optflag("o", "", "choose only from potentially offensive aphorisms");
     opts.optflag("s", "", "short apothegms only");
     opts.optflag("i", "", "ignore case for -m patterns");
-    opts.optflag("w", "", "wait  before termination");
+    opts.optflag("w", "", "wait before termination");
 
     let matches = match opts.parse(&args[1..]) {
         Ok(m) => m,
@@ -34,6 +35,12 @@ fn main() {
             return;
         }
     };
+
+    if matches.opt_present("h") {
+        let brief = format!("Usage: {} [options] [[n%] file/dir ...]", args[0]);
+        print!("{}", opts.usage(&brief));
+        return;
+    }
 
     match run(FORTUNE_DIR, matches) {
         Ok(_) => return,
