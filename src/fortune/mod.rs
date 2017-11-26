@@ -46,28 +46,45 @@ impl Fortune {
         Ok(())
     }
 
+    // Select only long messages
     pub fn long_only(mut self) -> Self {
         self.long_only = true;
         self.short_only = false;
         self
     }
 
-    pub fn short_only(mut self) -> Self{
+    // Select only short messages
+    pub fn short_only(mut self) -> Self {
         self.short_only = true;
         self.long_only = false;
         self
     }
 
-    pub fn short_len(mut self, n: u32) -> Self{
+    // Set the short message threshold
+    pub fn short_len(mut self, n: u32) -> Self {
         self.slen = n;
         self
     }
 
-    pub fn equal_size(mut self) -> Self{
-        // set all weights to 1 if considering equal size
+    // Set all weights to 1 if considering equal size
+    pub fn equal_size(mut self) -> Self {
         for cf in &mut self.jars {
             cf.weight = 1.0;
         }
+        self
+    }
+
+    // Normalize weights to totalize 100%
+    pub fn normalize_weights(mut self) -> Self {
+        let mut w: f32 = 0.0;
+        for cf in &self.jars {
+            w += cf.weight;
+        }
+        w /= 100.0;
+        for cf in &mut self.jars {
+            cf.weight /= w;
+        }
+
         self
     }
 
@@ -104,20 +121,6 @@ impl Fortune {
             try!(cf.get_many(&re, self.slen, self.long_only, self.short_only, &fname, &fun));
         }
         Ok(())
-    }
-
-    // Normalize weights to totalize 100%
-    pub fn normalize_weights(mut self) -> Self {
-        let mut w: f32 = 0.0;
-        for cf in &self.jars {
-            w += cf.weight;
-        }
-        w /= 100.0;
-        for cf in &mut self.jars {
-            cf.weight /= w;
-        }
-
-        self
     }
 
     pub fn print_weights(self) {
