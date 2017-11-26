@@ -40,8 +40,16 @@ pub struct Fortune {
 impl Fortune {
 
     // Load cookie files metadata
-    pub fn load(&mut self, dir: &str) -> Result<(), Box<Error>> {
-        let files = fortune_files(dir)?;
+    pub fn load(&mut self, what: &str) -> Result<(), Box<Error>> {
+
+        let mut files: Vec<path::PathBuf> = Vec::new();
+        let md = try!(fs::metadata(what));
+
+        if md.is_dir() {
+            files = add_fortune_dir(files, what)?;
+        } else if md.is_file() {
+            files = add_fortune_file(files, what)?;
+        }
 
         if files.len() <= 0 {
             return Err(From::from("No fortunes found".to_string()));
@@ -124,15 +132,29 @@ pub fn new() -> Fortune {
     }
 }
 
-fn fortune_files(dir: &str) -> Result<Vec<path::PathBuf>, io::Error> {
-
-    let mut v: Vec<path::PathBuf> = Vec::new();
+fn add_fortune_dir(mut v: Vec<path::PathBuf>, dir: &str) ->
+    Result<Vec<path::PathBuf>, io::Error> {
 
     for entry in fs::read_dir(dir)? {
         let path = entry?.path();
         if path.extension().and_then(OsStr::to_str) == Some("dat") {
             v.push(path)
         }
+    }
+
+    Ok(v)
+}
+
+fn add_fortune_file(mut v: Vec<path::PathBuf>, name: &str) ->
+    Result<Vec<path::PathBuf>, Box<Error>> {
+
+    let datname = String::from(name) + ".dat";
+    let md = try!(fs::metadata(&datname));
+
+    if md.is_file() {
+        v.push(path::PathBuf::from(datname));
+    } else {
+        return Err(From::from(format!("{}: missing strfile data file", name)));
     }
 
     Ok(v)

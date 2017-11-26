@@ -8,7 +8,7 @@ use getopts::{Matches, Options};
 
 mod fortune;
 
-const FORTUNE_DIR: &'static str = "/usr/share/games/fortunes";
+const FORTUNE_DIR: &'static str = "/usr/share/games/fortune";
 
 fn main() {
 
