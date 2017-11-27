@@ -51,7 +51,7 @@ impl Strfile {
         Ok(self)
     }
 
-    pub fn get_one<F>(&self, slen: u32, long_only: bool, short_only: bool, fun: F) ->
+    pub fn get_one<F>(&self, slen: u32, long_only: bool, short_only: bool, show_file: bool, fun: F) ->
         Result<(), Box<Error>> where F: FnOnce(&String) {
 
         let range = distributions::Range::new(0, self.dat.numstr);
@@ -77,6 +77,10 @@ impl Strfile {
 
         if self.dat.is_rotated() {
             s = rot13::rot13(&s[..]);
+        }
+
+        if show_file {
+            println!("({})\n{}", self.name, self.separator());
         }
 
         fun(&s);
@@ -110,6 +114,10 @@ impl Strfile {
         }
 
         Ok(())
+    }
+
+    fn separator(&self) -> char {
+        self.dat.stuff[0] as char
     }
 }
 

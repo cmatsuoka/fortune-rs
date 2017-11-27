@@ -13,7 +13,7 @@ mod fortune;
 
 const MIN_WAIT     : usize = 6;
 const CHARS_PER_SEC: usize = 20;
-const FORTUNE_DIR  : &'static str = "/usr/share/games/fortune";
+const FORTUNE_DIR  : &'static str = "/usr/share/games/fortunes";
 
 fn main() {
 
@@ -87,6 +87,11 @@ fn run(dir: &str, matches: Matches) -> Result<(), Box<Error>> {
 
     if matches.opt_present("s") {
         fortune = fortune.short_only();
+    }
+
+    // Print file from which the fortune came
+    if matches.opt_present("c") {
+        fortune = fortune.show_file();
     }
 
     match matches.opt_str("m") {

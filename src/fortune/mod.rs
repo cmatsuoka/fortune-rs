@@ -17,6 +17,7 @@ pub struct Fortune {
     slen      : u32,                   // short fortune length
     long_only : bool,                  // display only long fortunes
     short_only: bool,                  // display only short fortunes
+    show_file : bool,                  // display the cookie file name
     jars      : Vec<strfile::Strfile>, // list of cookie files
 }
 
@@ -74,6 +75,12 @@ impl Fortune {
         self
     }
 
+    // Show the file where the fortune came from
+    pub fn show_file(mut self) -> Self {
+        self.show_file = true;
+        self
+    }
+
     // Normalize weights to totalize 100%
     pub fn normalize_weights(mut self) -> Self {
         let mut w: f32 = 0.0;
@@ -108,7 +115,7 @@ impl Fortune {
 
     // Get a random string from a random cookie file
     pub fn get<F>(&self, f: F) -> Result<(), Box<Error>> where F: FnOnce(&String) {
-        return self.pick_jar().get_one(self.slen, self.long_only, self.short_only, f);
+        return self.pick_jar().get_one(self.slen, self.long_only, self.short_only, self.show_file, f);
     }
 
     // Get all strings that match a given regexp pattern
@@ -132,10 +139,11 @@ impl Fortune {
 
 pub fn new() -> Fortune {
     return Fortune{
-        slen: 160,
-        long_only: false,
+        slen      : 160,
+        long_only : false,
         short_only: false,
-        jars: Vec::new(),
+        show_file : false,
+        jars      : Vec::new(),
     }
 }
 
