@@ -100,12 +100,10 @@ fn run(dir: &str, matches: Matches) -> Result<(), Box<Error>> {
             if matches.opt_present("i") {
                 p = format!("(?i:{})", p);
             }
-            let p = p.deref();
-            try!(fortune.search(p, |x| println!("({})", x), |x| print!("{}", x)))
+            try!(fortune.search(p.deref()))
         },
         None => {
-            let mut fort_size: usize = 0;
-            try!(fortune.get(|x| { print!("{}", x); fort_size = x.len() }));
+            let fort_size = try!(fortune.print());
             if matches.opt_present("w") {
                 sleep(Duration::from_secs(max(fort_size / CHARS_PER_SEC, MIN_WAIT) as u64));
             }

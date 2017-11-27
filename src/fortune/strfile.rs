@@ -30,7 +30,6 @@ pub struct Strfile {
 impl Strfile {
 
     pub fn load(mut self, path: &path::PathBuf) -> Result<Strfile, Box<Error>> {
-    
         let name = path.file_stem().unwrap().to_str().unwrap().to_string();
 
         // check if file exists
@@ -51,8 +50,8 @@ impl Strfile {
         Ok(self)
     }
 
-    pub fn get_one<F>(&self, slen: u32, long_only: bool, short_only: bool, show_file: bool, fun: F) ->
-        Result<(), Box<Error>> where F: FnOnce(&String) {
+    pub fn print_one(&self, slen: u32, long_only: bool, short_only: bool, show_file: bool) ->
+        Result<usize, Box<Error>> {
 
         let range = distributions::Range::new(0, self.dat.numstr);
         let mut rng = rand::thread_rng();
@@ -83,13 +82,13 @@ impl Strfile {
             println!("({})\n{}", self.name, self.separator());
         }
 
-        fun(&s);
+        print!("{}", s);
 
-        Ok(())
+        Ok(s.len())
     }
 
-    pub fn get_many<F1, F2>(&self, re: &Regex, slen: u32, long_only: bool, short_only: bool,
-        fname: F1, fun: F2) -> Result<(), Box<Error>> where F1: Fn(&String), F2: Fn(&String) {
+    pub fn print_matches(&self, re: &Regex, slen: u32, long_only: bool, short_only: bool) ->
+        Result<(), Box<Error>> {
 
         use std::ops::Deref;
 
@@ -98,7 +97,7 @@ impl Strfile {
 
         let mut s = String::with_capacity(self.dat.longlen as usize);
 
-        fname(&self.name);
+        println!("({})\n{}", self.name, self.separator());
 
         for n in 0..self.dat.numstr as usize {
             let start = self.dat.start_of(n);
@@ -108,7 +107,7 @@ impl Strfile {
 
             if (!long_only && size <= slen) || (!short_only && size > slen) {
                 if re.is_match(s.deref()) {
-                    fun(&s);
+                    print!("{}", s);
                 }
             }
         }
@@ -195,7 +194,7 @@ trait ReadLines {
 impl<R: io::Read> ReadLines for io::BufReader<R> {
     fn read_lines(&mut self, mut s: String, size: usize) -> Result<String, Box<Error>> {
         s.clear();
-        while s.len() < size {
+        while s.len() <= size {
             try!(self.read_line(&mut s));
         }
         Ok(s)

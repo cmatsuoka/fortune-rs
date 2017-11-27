@@ -1,3 +1,5 @@
+// An implementation of fortune(6) in rust
+
 extern crate rand;
 extern crate regex;
 
@@ -114,18 +116,16 @@ impl Fortune {
     }
 
     // Get a random string from a random cookie file
-    pub fn get<F>(&self, f: F) -> Result<(), Box<Error>> where F: FnOnce(&String) {
-        return self.pick_jar().get_one(self.slen, self.long_only, self.short_only, self.show_file, f);
+    pub fn print(&self) -> Result<usize, Box<Error>> {
+        self.pick_jar().print_one(self.slen, self.long_only, self.short_only, self.show_file)
     }
 
     // Get all strings that match a given regexp pattern
-    pub fn search<F1, F2>(&self, pat: &str, fname: F1, fun: F2) -> Result<(), Box<Error>>
-        where F1: Fn(&String), F2: Fn(&String) {
-
+    pub fn search(&self, pat: &str) -> Result<(), Box<Error>> {
         let re = Regex::new(pat).unwrap();
 
         for cf in &self.jars {
-            try!(cf.get_many(&re, self.slen, self.long_only, self.short_only, &fname, &fun));
+            try!(cf.print_matches(&re, self.slen, self.long_only, self.short_only));
         }
         Ok(())
     }
