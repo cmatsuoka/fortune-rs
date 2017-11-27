@@ -72,7 +72,7 @@ impl Strfile {
         try!(f.seek(SeekFrom::Start(start as u64)));
 
         let mut s = String::with_capacity(size as usize);
-        s = try!(f.read_lines(s, size as usize));
+        s = try!(f.read_lines(s, size as usize - 2));
 
         if self.dat.is_rotated() {
             s = rot13::rot13(&s[..]);

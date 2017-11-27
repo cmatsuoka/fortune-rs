@@ -1,5 +1,3 @@
-// An implementation of fortune(6) in rust
-
 extern crate rand;
 extern crate regex;
 
@@ -20,6 +18,8 @@ pub struct Fortune {
     long_only : bool,                  // display only long fortunes
     short_only: bool,                  // display only short fortunes
     show_file : bool,                  // display the cookie file name
+    all_forts : bool,                  // allow offensive fortunes
+    offend    : bool,                  // choose only from offensive fortunes
     jars      : Vec<strfile::Strfile>, // list of cookie files
 }
 
@@ -27,12 +27,11 @@ impl Fortune {
 
     // Load cookie files metadata
     pub fn load(&mut self, what: &str) -> Result<(), Box<Error>> {
-
         let mut files: Vec<path::PathBuf> = Vec::new();
         let md = try!(fs::metadata(what));
 
         if md.is_dir() {
-            files = add_fortune_dir(files, what)?;
+            files = add_fortune_dir(files, what, self.all_forts, self.offend)?;
         } else if md.is_file() {
             files = add_fortune_file(files, what)?;
         }
@@ -97,6 +96,20 @@ impl Fortune {
         self
     }
 
+    // Allow both offensive and not offensive fortunes
+    pub fn all(mut self) -> Self {
+        self.all_forts = true;
+        self.offend = false;
+        self
+    }
+
+    // Select only from offensive fortunes
+    pub fn offensive(mut self) -> Self {
+        self.all_forts = false;
+        self.offend = true;
+        self
+    }
+
     // Choose a random cookie file weighted by its number of strings
     fn pick_jar(&self) -> &strfile::Strfile {
 
@@ -143,11 +156,13 @@ pub fn new() -> Fortune {
         long_only : false,
         short_only: false,
         show_file : false,
+        all_forts : false,
+        offend    : false,
         jars      : Vec::new(),
     }
 }
 
-fn add_fortune_dir(mut v: Vec<path::PathBuf>, dir: &str) ->
+fn add_fortune_dir(mut v: Vec<path::PathBuf>, dir: &str, all_forts: bool, offend: bool) ->
     Result<Vec<path::PathBuf>, io::Error> {
 
     for entry in fs::read_dir(dir)? {
@@ -156,11 +171,13 @@ fn add_fortune_dir(mut v: Vec<path::PathBuf>, dir: &str) ->
             // remove file extension
             let p = path.clone();
             let stem = p.file_stem().unwrap();
+            let name = stem.to_str().unwrap().to_string();
 
-            path.pop();
-            path.push(stem);
-
-            v.push(path)
+            if all_forts || !(offend ^ name.ends_with("-o")) {
+                path.pop();
+                path.push(stem);
+                v.push(path)
+            }
         }
     }
 

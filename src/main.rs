@@ -1,3 +1,4 @@
+// An implementation of fortune(6) in Rust.
 
 extern crate getopts;
 
@@ -58,6 +59,15 @@ fn main() {
 
 fn run(dir: &str, matches: Matches) -> Result<(), Box<Error>> {
     let mut fortune = fortune::new();
+
+    // Handle offensive fortune options before loading
+    if matches.opt_present("o") {
+        fortune = fortune.offensive();
+    }
+
+    if matches.opt_present("a") {
+        fortune = fortune.all();
+    }
 
     try!(fortune.load(dir));
 
