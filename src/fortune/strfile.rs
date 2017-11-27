@@ -72,7 +72,7 @@ impl Strfile {
         try!(f.seek(SeekFrom::Start(start as u64)));
 
         let mut s = String::with_capacity(size as usize);
-        s = try!(f.read_lines(s, size as usize - 2));
+        s = try!(f.read_until_separator(s, &self.separator().to_string()));
 
         if self.dat.is_rotated() {
             s = rot13::rot13(&s[..]);
@@ -94,7 +94,6 @@ impl Strfile {
 
         let file = try!(File::open(self.path.clone()));
         let mut f = io::BufReader::new(&file);
-
         let mut s = String::with_capacity(self.dat.longlen as usize);
 
         println!("({})\n{}", self.name, self.separator());
@@ -103,11 +102,11 @@ impl Strfile {
             let start = self.dat.start_of(n);
             let size = self.dat.end_of(n) - start - 2;
 
-            s = try!(f.read_lines(s, size as usize));
+            s = try!(f.read_until_separator(s, &self.separator().to_string()));
 
             if (!long_only && size <= slen) || (!short_only && size > slen) {
                 if re.is_match(s.deref()) {
-                    print!("{}", s);
+                    println!("{}{}", s, self.separator());
                 }
             }
         }
@@ -188,14 +187,20 @@ impl Datfile {
 // Trait to read lines from a file
 
 trait ReadLines {
-    fn read_lines(&mut self, s: String, size: usize) -> Result<String, Box<Error>>;
+    fn read_until_separator(&mut self, s: String, sep: &str) -> Result<String, Box<Error>>;
 }
 
 impl<R: io::Read> ReadLines for io::BufReader<R> {
-    fn read_lines(&mut self, mut s: String, size: usize) -> Result<String, Box<Error>> {
+    fn read_until_separator(&mut self, mut s: String, sep: &str) -> Result<String, Box<Error>> {
+        let mut buf = String::new();
         s.clear();
-        while s.len() <= size {
-            try!(self.read_line(&mut s));
+        loop {
+            buf.clear();
+            let n = try!(self.read_line(&mut buf));
+            if n == 0 || &*buf.trim() == sep {
+                break;
+            }
+            s.push_str(&buf);
         }
         Ok(s)
     }
