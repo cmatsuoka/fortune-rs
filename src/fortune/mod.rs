@@ -171,7 +171,8 @@ impl Fortune {
 
     pub fn print_weights(self) {
         for cf in self.jars {
-            println!("   {:6.2}% {}", cf.weight, cf.name);
+            let info = cf.info();
+            println!(" {:6.2}% {:5} {:5} {:5} {}", cf.weight, cf.num_str(), info.1, info.2, cf.filepath());
         }
     }
 }

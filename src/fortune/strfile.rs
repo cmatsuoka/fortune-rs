@@ -7,6 +7,7 @@ use std::error::Error;
 use std::fs::{self, File};
 use std::io::{self, BufRead, Read, Seek, SeekFrom};
 use std::path;
+use std::str;
 use self::byteorder::{BigEndian, ReadBytesExt};
 use self::rand::distributions::{self, IndependentSample};
 use self::regex::Regex;
@@ -19,7 +20,7 @@ const STRFILE_FLAG_ROTATED: u32 = 0x4;	// rot-13'd text
 
 // String file
 
-#[derive(Clone,Default)]
+#[derive(Clone, Default)]
 pub struct Strfile {
     pub name  : String,        // cookie file name
     pub weight: f32,           // weight of this file for random pick
@@ -52,6 +53,15 @@ impl Strfile {
 
     pub fn num_str(&self) -> usize {
         self.dat.numstr as usize
+    }
+
+    pub fn info(&self) -> (usize, usize, usize, u32) {
+        let d = &self.dat;
+        (d.version as usize, d.longlen as usize, d.shortlen as usize, d.flags)
+    }
+
+    pub fn filepath(&self) -> &str {
+        self.path.to_str().unwrap()
     }
 
     pub fn print_one(&self, slen: u32, long_only: bool, short_only: bool, show_file: bool) ->
