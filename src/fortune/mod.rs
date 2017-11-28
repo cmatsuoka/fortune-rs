@@ -125,7 +125,7 @@ impl Fortune {
 
         let range = distributions::WeightedChoice::new(&mut items);
 
-        return range.ind_sample(&mut rng);
+        range.ind_sample(&mut rng)
     }
 
     // Get a random string from a random cookie file
@@ -191,7 +191,7 @@ fn add_fortune_file(mut v: Vec<path::PathBuf>, name: &str) ->
     let md = try!(fs::metadata(&datname));
 
     if md.is_file() {
-        v.push(path::PathBuf::from(datname));
+        v.push(path::PathBuf::from(name));
     } else {
         return Err(From::from(format!("{}: missing strfile data file", name)));
     }

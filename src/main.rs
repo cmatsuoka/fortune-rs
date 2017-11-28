@@ -3,6 +3,7 @@
 extern crate getopts;
 
 use std::cmp::max;
+use std::collections::HashMap;
 use std::env;
 use std::error::Error;
 use std::ops::Deref;
@@ -43,12 +44,29 @@ fn main() {
     };
 
     if matches.opt_present("h") {
-        let brief = format!("Usage: {} [options] [[n%] file/dir ...]", args[0]);
+        let brief = format!("Usage: {} [options] [[n%] file/dir]...", args[0]);
         print!("{}", opts.usage(&brief));
         return;
     }
 
-    match run(FORTUNE_DIR, matches) {
+    // Get file list from command line with optional percentages
+    let mut filelist = HashMap::new();
+    if matches.free.is_empty() {
+        filelist.insert(FORTUNE_DIR.to_string(), -1.0);
+    } else {
+        let mut percentage: f32 = -1.0; 
+        for mut m in matches.free.clone() {
+            if m.ends_with("%") {
+                m.pop();
+                percentage = m.parse::<f32>().unwrap(); 
+            } else {
+                filelist.insert(m, percentage);
+                percentage = -1.0;
+            }
+        }
+    }
+
+    match run(filelist, matches) {
         Ok(_) => return,
         Err(e) => {
             println!("Error: {}", e);
@@ -57,7 +75,7 @@ fn main() {
     }
 }
 
-fn run(dir: &str, matches: Matches) -> Result<(), Box<Error>> {
+fn run(list: HashMap<String, f32>, matches: Matches) -> Result<(), Box<Error>> {
     let mut fortune = fortune::new();
 
     // Handle offensive fortune options before loading
@@ -69,7 +87,9 @@ fn run(dir: &str, matches: Matches) -> Result<(), Box<Error>> {
         fortune = fortune.all();
     }
 
-    try!(fortune.load(dir));
+    for (key, val) in list {
+        try!(fortune.load(&key[..]));
+    }
 
     if matches.opt_present("e") {
         fortune = fortune.equal_size();
