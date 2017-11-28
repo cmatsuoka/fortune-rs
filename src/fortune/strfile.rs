@@ -55,16 +55,13 @@ impl Strfile {
 
         let range = distributions::Range::new(0, self.dat.numstr);
         let mut rng = rand::thread_rng();
-        let (mut which, mut start, mut size);
    
-        loop {
-            which = range.ind_sample(&mut rng) as usize;
-            start = self.dat.start_of(which);
-            size = self.dat.end_of(which) - start - 2;
+        let which = range.ind_sample(&mut rng) as usize;
+        let start = self.dat.start_of(which);
+        let size = self.dat.end_of(which) - start - 2;
 
-            if (!long_only && size <= slen) || (!short_only && size > slen) {
-                break;
-            }
+        if (long_only || size > slen) && (short_only || size <= slen) {
+            return Ok(0);
         }
 
         let file = try!(File::open(self.path.clone()));

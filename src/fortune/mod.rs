@@ -130,7 +130,16 @@ impl Fortune {
 
     // Get a random string from a random cookie file
     pub fn print(&self) -> Result<usize, Box<Error>> {
-        self.pick_jar().print_one(self.slen, self.long_only, self.short_only, self.show_file)
+        loop {
+            match self.pick_jar().print_one(self.slen, self.long_only, self.short_only, self.show_file) {
+                Ok(val) => {
+                    if val > 0 {
+                        return Ok(val);
+                    }
+                },
+                Err(e) => return Err(e),
+            }
+        }
     }
 
     // Get all strings that match a given regexp pattern
