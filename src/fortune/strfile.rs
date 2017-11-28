@@ -29,7 +29,7 @@ pub struct Strfile {
 
 impl Strfile {
 
-    pub fn load(mut self, path: &path::PathBuf) -> Result<Strfile, Box<Error>> {
+    pub fn load(mut self, path: &path::PathBuf, weight: f32) -> Result<Strfile, Box<Error>> {
         let name = path.file_stem().unwrap().to_str().unwrap().to_string();
 
         // check if file exists
@@ -45,9 +45,13 @@ impl Strfile {
     
         self.name = name;
         self.path = path.clone();
-        self.weight = self.dat.numstr as f32;
+        self.weight = weight; //self.dat.numstr as f32;
     
         Ok(self)
+    }
+
+    pub fn num_str(&self) -> usize {
+        self.dat.numstr as usize
     }
 
     pub fn print_one(&self, slen: u32, long_only: bool, short_only: bool, show_file: bool) ->

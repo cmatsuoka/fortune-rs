@@ -23,17 +23,19 @@ pub struct Fortune {
     jars      : Vec<strfile::Strfile>, // list of cookie files
 }
 
+type Pathspec = (path::PathBuf, f32);
+
 impl Fortune {
 
     // Load cookie files metadata
-    pub fn load(&mut self, what: &str) -> Result<(), Box<Error>> {
-        let mut files: Vec<path::PathBuf> = Vec::new();
+    pub fn load(&mut self, what: &str, val: f32) -> Result<(), Box<Error>> {
+        let mut files: Vec<Pathspec> = Vec::new();
         let md = try!(fs::metadata(what));
 
         if md.is_dir() {
-            files = add_fortune_dir(files, what, self.all_forts, self.offend)?;
+            files = add_fortune_dir(files, what, val, self.all_forts, self.offend)?;
         } else if md.is_file() {
-            files = add_fortune_file(files, what)?;
+            files = add_fortune_file(files, what, val)?;
         }
 
         if files.len() <= 0 {
@@ -42,7 +44,7 @@ impl Fortune {
 
         for f in files {
             let sf = strfile::new();
-            self.jars.push(sf.load(&f)?);
+            self.jars.push(sf.load(&f.0, f.1)?);
         }
 
         Ok(())
@@ -82,20 +84,6 @@ impl Fortune {
         self
     }
 
-    // Normalize weights to totalize 100%
-    pub fn normalize_weights(mut self) -> Self {
-        let mut w: f32 = 0.0;
-        for cf in &self.jars {
-            w += cf.weight;
-        }
-        w /= 100.0;
-        for cf in &mut self.jars {
-            cf.weight /= w;
-        }
-
-        self
-    }
-
     // Allow both offensive and not offensive fortunes
     pub fn all(mut self) -> Self {
         self.all_forts = true;
@@ -108,6 +96,35 @@ impl Fortune {
         self.all_forts = false;
         self.offend = true;
         self
+    }
+
+    // Normalize weights to totalize 100%
+    pub fn normalize_weights(mut self) -> Result<Self, Box<Error>> {
+        let mut total: f32 = 100.0;
+
+        for cf in &self.jars {
+            if cf.weight > 0.0 {
+                total -= cf.weight;
+            }
+        }
+
+        if total < 0.0 {
+            return Err(From::from("percentages must be <= 100".to_string()));
+        }
+
+        let mut w: f32 = 0.0;
+        for cf in &self.jars {
+            if cf.weight < 0.0 {
+                w += cf.num_str() as f32;
+            }
+        }
+        for cf in &mut self.jars {
+            if cf.weight < 0.0 {
+                cf.weight = total * cf.num_str() as f32 / w;
+            }
+        }
+
+        Ok(self)
     }
 
     // Choose a random cookie file weighted by its number of strings
@@ -171,8 +188,10 @@ pub fn new() -> Fortune {
     }
 }
 
-fn add_fortune_dir(mut v: Vec<path::PathBuf>, dir: &str, all_forts: bool, offend: bool) ->
-    Result<Vec<path::PathBuf>, io::Error> {
+fn add_fortune_dir(mut v: Vec<Pathspec>, dir: &str, val: f32, all_forts: bool,
+    offend: bool) -> Result<Vec<Pathspec>, io::Error> {
+
+    let mut list: Vec<path::PathBuf> = Vec::new();
 
     for entry in fs::read_dir(dir)? {
         let mut path = entry?.path();
@@ -185,22 +204,27 @@ fn add_fortune_dir(mut v: Vec<path::PathBuf>, dir: &str, all_forts: bool, offend
             if all_forts || !(offend ^ name.ends_with("-o")) {
                 path.pop();
                 path.push(stem);
-                v.push(path)
+                list.push(path)
             }
         }
+    }
+
+    let num = list.len() as f32;
+    for l in list.clone() {
+        v.push((l, val / num));
     }
 
     Ok(v)
 }
 
-fn add_fortune_file(mut v: Vec<path::PathBuf>, name: &str) ->
-    Result<Vec<path::PathBuf>, Box<Error>> {
+fn add_fortune_file(mut v: Vec<Pathspec>, name: &str, val: f32) ->
+    Result<Vec<Pathspec>, Box<Error>> {
 
     let datname = String::from(name) + ".dat";
     let md = try!(fs::metadata(&datname));
 
     if md.is_file() {
-        v.push(path::PathBuf::from(name));
+        v.push((path::PathBuf::from(name), val));
     } else {
         return Err(From::from(format!("{}: missing strfile data file", name)));
     }

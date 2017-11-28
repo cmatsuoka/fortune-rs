@@ -88,14 +88,14 @@ fn run(list: HashMap<String, f32>, matches: Matches) -> Result<(), Box<Error>> {
     }
 
     for (key, val) in list {
-        try!(fortune.load(&key[..]));
+        try!(fortune.load(&key[..], val));
     }
 
     if matches.opt_present("e") {
         fortune = fortune.equal_size();
     }
 
-    fortune = fortune.normalize_weights();
+    fortune = try!(fortune.normalize_weights());
 
     if matches.opt_present("f") {
         fortune.print_weights();
