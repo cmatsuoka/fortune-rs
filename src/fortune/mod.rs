@@ -47,6 +47,8 @@ impl Fortune {
             self.jars.push(sf.load(&f.0, f.1)?);
         }
 
+        self.jars.sort_by(|a, b| a.name.cmp(&b.name));
+
         Ok(())
     }
 
