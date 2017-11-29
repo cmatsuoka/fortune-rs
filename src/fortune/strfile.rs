@@ -109,7 +109,7 @@ impl Strfile {
 
         for n in 0..self.dat.numstr as usize {
             let start = self.dat.start_of(n);
-            let size = self.dat.end_of(n) - start - 2;
+            let size = self.dat.end_of(n) - start;
 
             unsafe { v.set_len(size as usize); }
             try!(f.read_exact(&mut v[..]));
@@ -117,7 +117,7 @@ impl Strfile {
             if (!long_only && size <= slen) || (!short_only && size > slen) {
                 let s = String::from_utf8_lossy(&v);
                 if re.is_match(&s) {
-                    println!("{}{}", s, self.separator());
+                    print!("{}", s);
                 }
             }
         }
