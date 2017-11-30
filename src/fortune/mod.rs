@@ -8,6 +8,7 @@ use std::io;
 use std::path;
 use self::rand::distributions::{self, IndependentSample};
 use self::regex::Regex;
+use self::strfile::Strfile;
 
 mod strfile;
 
@@ -27,6 +28,18 @@ type Pathspec = (path::PathBuf, f32);
 
 impl Fortune {
 
+    pub fn new() -> Self {
+        Fortune{
+            slen      : 160,
+            long_only : false,
+            short_only: false,
+            show_file : false,
+            all_forts : false,
+            offend    : false,
+            jars      : Vec::new(),
+        }
+    }
+
     // Load cookie files metadata
     pub fn load(&mut self, what: &str, val: f32) -> Result<(), Box<Error>> {
         let mut files: Vec<Pathspec> = Vec::new();
@@ -43,7 +56,7 @@ impl Fortune {
         }
 
         for f in files {
-            let sf = strfile::new();
+            let sf = Strfile::new();
             self.jars.push(sf.load(&f.0, f.1)?);
         }
 
@@ -176,18 +189,6 @@ impl Fortune {
             let info = cf.info();
             println!(" {:6.2}% {:5} {:5} {:5} {}", cf.weight, cf.num_str(), info.1, info.2, cf.filepath());
         }
-    }
-}
-
-pub fn new() -> Fortune {
-    return Fortune{
-        slen      : 160,
-        long_only : false,
-        short_only: false,
-        show_file : false,
-        all_forts : false,
-        offend    : false,
-        jars      : Vec::new(),
     }
 }
 

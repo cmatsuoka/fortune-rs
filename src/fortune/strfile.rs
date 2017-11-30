@@ -30,6 +30,10 @@ pub struct Strfile {
 
 impl Strfile {
 
+    pub fn new() -> Self {
+        Default::default()
+    }
+
     pub fn load(mut self, path: &path::PathBuf, weight: f32) -> Result<Strfile, Box<Error>> {
         let name = path.file_stem().unwrap().to_str().unwrap().to_string();
 
@@ -130,10 +134,6 @@ impl Strfile {
     }
 }
 
-pub fn new() -> Strfile {
-    return Default::default();
-}
-
 
 // Dat file
 
@@ -151,7 +151,6 @@ struct Datfile {
 impl Datfile {
 
     pub fn load(&mut self, path: &path::PathBuf) -> Result<(), Box<Error>> {
-
         let file = try!(File::open(path));
         let mut f = io::BufReader::new(&file);
 
@@ -197,11 +196,11 @@ impl Datfile {
 
 // Trait to read lines from a file
 
-trait ReadLines {
+trait ReadExt {
     fn read_lines_until(&mut self, s: String, sep: &str) -> Result<String, Box<Error>>;
 }
 
-impl<R: io::Read> ReadLines for io::BufReader<R> {
+impl<R: io::Read> ReadExt for io::BufReader<R> {
     fn read_lines_until(&mut self, mut s: String, sep: &str) -> Result<String, Box<Error>> {
         let mut buf = String::new();
         s.clear();

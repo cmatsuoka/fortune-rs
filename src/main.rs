@@ -10,6 +10,7 @@ use std::ops::Deref;
 use std::thread::sleep;
 use std::time::Duration;
 use getopts::{Matches, Options};
+use fortune::Fortune;
 
 mod fortune;
 
@@ -76,7 +77,7 @@ fn main() {
 }
 
 fn run(list: HashMap<String, f32>, matches: Matches) -> Result<(), Box<Error>> {
-    let mut fortune = fortune::new();
+    let mut fortune = Fortune::new();
 
     // Handle offensive fortune options before loading
     if matches.opt_present("o") {
